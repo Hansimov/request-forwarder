@@ -1,29 +1,18 @@
 const express = require("express");
 const cors = require("cors");
-const request = require("request");
-const bodyParser = require("body-parser");
-
+const { createProxyMiddleware } = require("http-proxy-middleware");
 const app = express();
-app.use(bodyParser.json());
-app.use(
-    cors({
-        origin: "*",
-        methods: ["GET", "POST", "PUT", "DELETE"],
-        allowedHeaders: "*",
-    })
-);
+app.use(cors());
 
-app.get("/", (req, res) => {
-    res.send("Hello World!");
+app.use("/forward/*", function (req, res, next) {
+    const target = req.params[0];
+    console.log(target);
+    createProxyMiddleware({
+        target: target,
+        changeOrigin: true,
+    })(req, res, next);
 });
 
-app.post("/forward", (req, res) => {
-    let options = req.body;
-    console.log(`Forward request: ${JSON.stringify(options)}`);
-    request(options).pipe(res);
-});
-
-let port = 12444;
-app.listen(port, () => {
-    console.log(`Server listening on port: ${port}`);
-});
+const port = 12444;
+app.listen(port);
+console.log(`Forwarder running at port: "${port}"`);
